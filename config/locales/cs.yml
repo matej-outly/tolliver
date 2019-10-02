@@ -1,0 +1,86 @@
+cs:
+  activerecord:
+    attributes:
+      tolliver/notification:
+        created_at: Vytvořeno
+        subject: Předmět
+        message: Obsah
+        url: URL
+        attachment: Příloha
+        kind: Typ zprávy
+        kind_values:
+          notice: Informace
+          alert: Chyba
+          warning: Varování
+        sender: Odesílatel
+        sent_at: Odesláno
+        done: Hotovo
+        deliveries: Metody doručení
+      tolliver/notification_delivery:
+        sent_at: Odesláno
+        done: Hotovo
+        receivers: Příjemci
+        kind: Doručovací metoda
+        kind_values:
+          email: E-mail
+          sms: SMS
+      tolliver/notification_receiver:
+        receiver: Příjemce
+        state: Stav
+        state_values:
+          created: Vytvořeno
+          sent: Odesláno
+          received: Doručeno
+          accepted: Akceptováno
+          error: Chyba
+        state_colors:
+          created: yellow
+          sent: green
+          received: green
+          accepted: green
+          error: red
+        created_at: Vytvořeno
+        sent_at: Odesláno
+        received_at: Doručeno
+      tolliver/notification_template:
+        ref: Klíč
+        subject: Předmět
+        message: Zpráva
+        disabled: Nevytvářet notifikace
+        disabled_values:
+          bool_yes: Nevytvářet
+          bool_no: Vytvářet
+        disabled_colors:
+          bool_yes: red
+          bool_no: green
+        dry: Neodesílat notifikace
+        dry_values:
+          bool_yes: Neodesílat
+          bool_no: Odesílat
+        dry_colors:
+          bool_yes: red
+          bool_no: green
+    notices:
+      models:
+        tolliver/notification:
+          update: Zpráva byla úspěšně uložena.
+          create: Zpráva byla úspěšně vytvořena.
+          enqueue_for_delivery: Zpráva byla úspěšně zařazena k odeslání.
+          destroy: Zpráva byla úspěšně smazána.
+        tolliver/notification_template:
+          update: Šablona zprávy byla úspěšně uložena.
+    errors:
+      models:
+        tolliver/notification:
+          not_found: Zpráva nebyla nalezena.
+        tolliver/notification_delivery:
+          not_found: Doručovací metoda nebyla nalezena.
+        tolliver/notification_receiver:
+          not_found: Příjemce nebyl nalezen.
+        tolliver/notification_template:
+          not_found: Šablona zprávy nebyla nalezena.
+    mailers:
+      tolliver:
+        notification:
+          notify:
+            subject: "%{url}: Nová systémová zpráva"

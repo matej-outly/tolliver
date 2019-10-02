@@ -1,0 +1,86 @@
+cs:
+  activerecord:
+    attributes:
+      tolliver/notification:
+        created_at: Created
+        subject: Subject
+        message: Message
+        url: URL
+        attachment: Attachment
+        kind: Message type
+        kind_values:
+          notice: Information
+          alert: Error
+          warning: Worning
+        sender: Sender
+        sent_at: Sent
+        done: Done
+        deliveries: Methods of delivery
+      tolliver/notification_delivery:
+        sent_at: Sent
+        done: Done
+        receivers: Receivers
+        kind: Delivery type
+        kind_values:
+          email: E-mail
+          sms: SMS
+      tolliver/notification_receiver:
+        receiver: Receiver
+        state: Status
+        state_values:
+          created: Created
+          sent: Sent
+          received: Received
+          accepted: Accepted
+          error: Error
+        state_colors:
+          created: yellow
+          sent: green
+          received: green
+          accepted: green
+          error: red
+        created_at: Created
+        sent_at: Sent
+        received_at: Received
+      tolliver/notification_template:
+        ref: Reference
+        subject: Subject
+        message: Message
+        disabled: Disable notifications
+        disabled_values:
+          bool_yes: Disable
+          bool_no: Enable
+        disabled_colors:
+          bool_yes: red
+          bool_no: green
+        dry: Don't send notifications
+        dry_values:
+          bool_yes: Don't send
+          bool_no: Send
+        dry_colors:
+          bool_yes: red
+          bool_no: green
+    notices:
+      models:
+        tolliver/notification:
+          update: Message was successfully saved.
+          create: Message was successfully created.
+          enqueue_for_delivery: Message was successfully enqueued for delivery.
+          destroy: Message was successfully deleted.
+        tolliver/notification_template:
+          update: Template was successfully saved.
+    errors:
+      models:
+        tolliver/notification:
+          not_found: Message was not found.
+        tolliver/notification_delivery:
+          not_found: Delivery method was not found.
+        tolliver/notification_receiver:
+          not_found: Receier was not found.
+        tolliver/notification_template:
+          not_found: Template was not found.
+    mailers:
+      tolliver:
+        notification:
+          notify:
+            subject: "%{url}: New system notification"
