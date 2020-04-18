@@ -11,7 +11,7 @@ en:
         kind_values:
           notice: Information
           alert: Error
-          warning: Worning
+          warning: Warning
         sender: Sender
         sent_at: Sent
         done: Done
