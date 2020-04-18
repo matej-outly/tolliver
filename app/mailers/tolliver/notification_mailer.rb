@@ -10,7 +10,7 @@
 # *****************************************************************************
 
 module Tolliver
-	class NotificationMailer < ::ApplicationMailer
-		include Tolliver::Mailers::NotificationMailer
-	end
+  class NotificationMailer < ::ApplicationMailer
+    include Tolliver::Mailers::NotificationMailer
+  end
 end

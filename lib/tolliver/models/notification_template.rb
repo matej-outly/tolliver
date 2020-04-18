@@ -10,38 +10,45 @@
 # *****************************************************************************
 
 module Tolliver
-	module Models
-		module NotificationTemplate extend ActiveSupport::Concern
+  module Models
+    module NotificationTemplate
+      extend ActiveSupport::Concern
 
-			included do
+      included do
 
-				# *************************************************************
-				# Structure
-				# *************************************************************
+        # *********************************************************************
+        # Structure
+        # *********************************************************************
 
-				has_many :notification_templates, class_name: Tolliver.notification_template_model.to_s, dependent: :nullify
+        has_many :notification_templates, class_name: Tolliver.notification_template_model.to_s, dependent: :nullify
 
-				# *************************************************************
-				# Validators
-				# *************************************************************
+        # *********************************************************************
+        # Validators
+        # *********************************************************************
 
-				validates_presence_of :ref
+        validates_presence_of :ref
 
-			end
+        # *********************************************************************
+        # Ref
+        # *********************************************************************
 
-			module ClassMethods
+        enum_column :ref, Tolliver.template_refs
 
-				def permitted_columns
-					[
-						:subject,
-						:message,
-						:disabled,
-						:dry
-					]
-				end
+      end
 
-			end
+      module ClassMethods
 
-		end
-	end
+        def permitted_columns
+          [
+              :subject,
+              :message,
+              :disabled,
+              :dry
+          ]
+        end
+
+      end
+
+    end
+  end
 end

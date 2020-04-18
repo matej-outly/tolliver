@@ -10,105 +10,112 @@
 # *****************************************************************************
 
 module Tolliver
-	module Models
-		module Notification extend ActiveSupport::Concern
+  module Models
+    module Notification
+      extend ActiveSupport::Concern
 
-			included do
+      included do
 
-				# *************************************************************
-				# Structure
-				# *************************************************************
+        # *********************************************************************
+        # Structure
+        # *********************************************************************
 
-				has_many :notification_deliveries, class_name: RicNotification.notification_delivery_model.to_s, dependent: :destroy
-				belongs_to :sender, polymorphic: true
-				belongs_to :notification_template, class_name: RicNotification.notification_template_model.to_s
+        has_many :notification_deliveries, class_name: Tolliver.notification_delivery_model.to_s, dependent: :destroy
+        belongs_to :sender, polymorphic: true
+        belongs_to :notification_template, class_name: Tolliver.notification_template_model.to_s
 
-			end
+        # *********************************************************************
+        # Kind
+        # *********************************************************************
 
-			# *****************************************************************
-			# Progress
-			# *****************************************************************
+        enum_column :kind, [:notice, :alert, :warning], default: :notice
 
-			def done
-				sent_count = 0
-				receivers_count = 0
-				self.notification_deliveries.each do |notification_delivery|
-					sent_count += notification_delivery.sent_count.to_i
-					receivers_count += notification_delivery.receivers_count.to_i
-				end
-				return sent_count.to_s + "/" + receivers_count.to_s
-			end
+      end
 
-			# *****************************************************************
-			# Sender
-			# *****************************************************************
+      # ***********************************************************************
+      # Progress
+      # ***********************************************************************
 
-			# Get name or email in case name is not set
-			def sender_name_or_email
-				if self.sender
-					if self.sender.respond_to?(:name_formatted) && !self.sender.name_formatted.blank?
-						return self.sender.name_formatted
-					elsif self.sender.respond_to?(:name) && !self.sender.name.blank?
-						return self.sender.name
-					else
-						return self.sender.email
-					end
-				else
-					return nil
-				end
-			end
+      def done
+        sent_count = 0
+        receivers_count = 0
+        self.notification_deliveries.each do |notification_delivery|
+          sent_count += notification_delivery.sent_count.to_i
+          receivers_count += notification_delivery.receivers_count.to_i
+        end
+        return sent_count.to_s + "/" + receivers_count.to_s
+      end
 
-			# *****************************************************************
-			# Delivery
-			# *****************************************************************
+      # ***********************************************************************
+      # Sender
+      # ***********************************************************************
 
-			# Enqueue for delivery
-			def enqueue_for_delivery
-				QC.enqueue("#{self.class.to_s}.deliver", self.id)
-			end
+      # Get name or email in case name is not set
+      def sender_name_or_email
+        if self.sender
+          if self.sender.respond_to?(:name_formatted) && !self.sender.name_formatted.blank?
+            return self.sender.name_formatted
+          elsif self.sender.respond_to?(:name) && !self.sender.name.blank?
+            return self.sender.name
+          else
+            return self.sender.email
+          end
+        else
+          return nil
+        end
+      end
 
-			# Deliver notification to receivers by all configured methods
-			def deliver
-				self.notification_deliveries.each do |notification_delivery|
-					notification_delivery.deliver
-				end
-			end
+      # ***********************************************************************
+      # Delivery
+      # ***********************************************************************
 
-			module ClassMethods
+      # Enqueue for delivery
+      def enqueue_for_delivery
+        QC.enqueue("#{self.class.to_s}.deliver", self.id)
+      end
 
-				# Deliver notification (defined by ID) to receivers by all configured methods
-				def deliver(notification_id)
+      # Deliver notification to receivers by all configured methods
+      def deliver
+        self.notification_deliveries.each do |notification_delivery|
+          notification_delivery.deliver
+        end
+      end
 
-					# Find notification object
-					notification = Tolliver.notification_model.find_by_id(notification_id)
-					return nil if notification.nil?
+      module ClassMethods
 
-					# Load balance
-					if !Tolliver.load_balance.blank?
-						notifications_sent_in_protected_time_window = Tolliver.notification_model
-							.joins(:notification_deliveries)
-							.where.not(id: notification.id)
-							.where("notification_deliveries.sent_at > ?", Time.current - Tolliver.load_balance.minutes).distinct
-						if notifications_sent_in_protected_time_window.count > 0
+        # Deliver notification (defined by ID) to receivers by all configured methods
+        def deliver(notification_id)
 
-							# Sleep for given amount of time
-							sleep (Tolliver.load_balance * 60) # seconds
+          # Find notification object
+          notification = Tolliver.notification_model.find_by_id(notification_id)
+          return nil if notification.nil?
 
-							# Then try again
-							notification.enqueue_for_delivery
+          # Load balance
+          if !Tolliver.load_balance.blank?
+            notifications_sent_in_protected_time_window = Tolliver.notification_model
+                                                              .joins(:notification_deliveries)
+                                                              .where.not(id: notification.id)
+                                                              .where("notification_deliveries.sent_at > ?", Time.current - Tolliver.load_balance.minutes).distinct
+            if notifications_sent_in_protected_time_window.count > 0
 
-							return notification
-						end
-					end
+              # Sleep for given amount of time
+              sleep(Tolliver.load_balance * 60) # seconds
 
-					# Deliver
-					notification.deliver
+              # Then try again
+              notification.enqueue_for_delivery
 
-					return notification
-				end
+              return notification
+            end
+          end
 
-			end
+          # Deliver
+          notification.deliver
 
-		end
-	end
+          return notification
+        end
+
+      end
+
+    end
+  end
 end

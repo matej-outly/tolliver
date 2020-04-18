@@ -10,20 +10,21 @@
 # *****************************************************************************
 
 module Tolliver
-	module Services
-		module Delivery extend ActiveSupport::Concern
+  module Services
+    module Delivery
+      extend ActiveSupport::Concern
 
-			module ClassMethods
+      module ClassMethods
 
-				#
-				# Deliver notification (defined by ID) to receivers by all configured methods
-				#
-				def deliver(notification_id)
-					Tolliver.notification_model.deliver(notification_id)
-				end
+        #
+        # Deliver notification (defined by ID) to receivers by all configured methods
+        #
+        def deliver(notification_id)
+          Tolliver.notification_model.deliver(notification_id)
+        end
 
-			end
+      end
 
-		end
-	end
+    end
+  end
 end

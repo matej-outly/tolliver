@@ -12,38 +12,38 @@
 require "plivo"
 
 module Tolliver
-	module Services
-		module Sms
-			class Plivo
+  module Services
+    module Sms
+      class Plivo
 
-				def initialize(params = {})
-					if params[:auth_id].blank? || params[:auth_token].blank?
-						raise "Please provide Auth ID and Auth Token in provider params."
-					end
-					@auth_id = params[:auth_id]
-					@auth_token = params[:auth_token]
-					@api = ::Plivo::RestAPI.new(@auth_id, @auth_token)
-				end
+        def initialize(params = {})
+          if params[:auth_id].blank? || params[:auth_token].blank?
+            raise "Please provide Auth ID and Auth Token in provider params."
+          end
+          @auth_id = params[:auth_id]
+          @auth_token = params[:auth_token]
+          @api = ::Plivo::RestAPI.new(@auth_id, @auth_token)
+        end
 
-				def deliver(receiver, message)
+        def deliver(receiver, message)
 
-					# Check message length.
-					if message.bytesize > 200
-						raise "Message too long."
-					end
+          # Check message length.
+          if message.bytesize > 200
+            raise "Message too long."
+          end
 
-					# Request API
-					response = @api.send_message({
-						 "src" => Tolliver.sms_sender, # TODO: This should be improved to take sender from number pool and remember number / message mapping
-						 "dst" => receiver.to_s,
-						 "text" => message.to_s,
-						 "method" => "POST"
-					 })
+          # Request API
+          response = @api.send_message({
+                                           "src" => Tolliver.sms_sender, # TODO: This should be improved to take sender from number pool and remember number / message mapping
+                                           "dst" => receiver.to_s,
+                                           "text" => message.to_s,
+                                           "method" => "POST"
+                                       })
 
-					return true
-				end
+          return true
+        end
 
-			end
-		end
-	end
+      end
+    end
+  end
 end

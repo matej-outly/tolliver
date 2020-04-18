@@ -10,13 +10,8 @@
 # *****************************************************************************
 
 module Tolliver
-	class Engine < ::Rails::Engine
-
-		# Controllers
-		require "tolliver/controllers/notifications_controller"
-		require "tolliver/controllers/notification_templates_controller"
-
-		isolate_namespace Tolliver
-	end
+  class Engine < ::Rails::Engine
+    isolate_namespace Tolliver
+  end
 end
 

@@ -10,7 +10,8 @@
 # *****************************************************************************
 
 module Tolliver
-	class NotificationTemplate < ActiveRecord::Base
-		include Tolliver::Models::NotificationTemplate
-	end
+  class NotificationTemplate < ActiveRecord::Base
+    include Tolliver::Utils::Enum
+    include Tolliver::Models::NotificationTemplate
+  end
 end

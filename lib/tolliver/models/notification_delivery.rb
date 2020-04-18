@@ -10,84 +10,103 @@
 # *****************************************************************************
 
 module Tolliver
-	module Models
-		module NotificationDelivery extend ActiveSupport::Concern
+  module Models
+    module NotificationDelivery
+      extend ActiveSupport::Concern
 
-			included do
+      included do
 
-				# *************************************************************
-				# Structure
-				# *************************************************************
+        # *********************************************************************
+        # Structure
+        # *********************************************************************
 
-				belongs_to :notification, class_name: Tolliver.notification_model.to_s
-				has_many :notification_receivers, class_name: Tolliver.notification_receiver_model.to_s, dependent: :destroy
+        belongs_to :notification, class_name: Tolliver.notification_model.to_s
+        has_many :notification_receivers, class_name: Tolliver.notification_receiver_model.to_s, dependent: :destroy
 
-				# *************************************************************
-				# Validators
-				# *************************************************************
+        # *********************************************************************
+        # Validators
+        # *********************************************************************
 
-				validates_presence_of :notification_id, :kind
+        validates_presence_of :notification_id, :kind
 
-			end
+        # *********************************************************************
+        # Kind
+        # *********************************************************************
 
-			# *****************************************************************
-			# Policy
-			# *****************************************************************
+        enum_column :kind, Tolliver.delivery_kinds
 
-			def policy
-				return case self.kind.to_sym
-					when :email then :batch
-					when :sms then :batch
-					else :instantly
-				end
-			end
+        # *********************************************************************
+        # Queue kind
+        # *********************************************************************
 
-			# *****************************************************************
-			# Progress
-			# *****************************************************************
+        enum_column :policy, [
+            :instantly,
+            :batch
+        ]
 
-			def done
-				if self.sent_count && self.receivers_count
-					return self.sent_count.to_s + "/" + self.receivers_count.to_s
-				else
-					return nil
-				end
-			end
+      end
 
-			# *****************************************************************
-			# Service
-			# *****************************************************************
+      # ***********************************************************************
+      # Policy
+      # ***********************************************************************
 
-			# Deliver by correct policy
-			def deliver
-				self.class.deliver(self.id)
-			end
+      def policy
+        return case self.kind.to_sym
+               when :email then
+                 :batch
+               when :sms then
+                 :batch
+               else
+                 :instantly
+               end
+      end
 
-			module ClassMethods
+      # ***********************************************************************
+      # Progress
+      # ***********************************************************************
 
-				# Deliver by correct policy
-				def deliver(notification_delivery_id)
+      def done
+        if self.sent_count && self.receivers_count
+          return self.sent_count.to_s + "/" + self.receivers_count.to_s
+        else
+          return nil
+        end
+      end
 
-					# Find notification delivery object
-					notification_delivery = Tolliver.notification_delivery_model.find_by_id(notification_delivery_id)
-					return nil if notification_delivery.nil?
+      # ***********************************************************************
+      # Service
+      # ***********************************************************************
 
-					# "Instanly" policy
-					if notification_delivery.policy == :instantly
-						self.deliver_instantly(notification_delivery_id)
+      # Deliver by correct policy
+      def deliver
+        self.class.deliver(self.id)
+      end
 
-					# "Batch" policy
-					elsif notification_delivery.policy == :batch
-						QC.enqueue("#{self.to_s}.deliver_batch_and_enqueue", notification_delivery_id)
-					else
-						return nil
-					end
+      module ClassMethods
 
-					return notification_delivery
-				end
+        # Deliver by correct policy
+        def deliver(notification_delivery_id)
 
-			end
+          # Find notification delivery object
+          notification_delivery = Tolliver.notification_delivery_model.find_by_id(notification_delivery_id)
+          return nil if notification_delivery.nil?
 
-		end
-	end
+          # "Instanly" policy
+          if notification_delivery.policy == :instantly
+            self.deliver_instantly(notification_delivery_id)
+
+            # "Batch" policy
+          elsif notification_delivery.policy == :batch
+            QC.enqueue("#{self.to_s}.deliver_batch_and_enqueue", notification_delivery_id)
+          else
+            return nil
+          end
+
+          return notification_delivery
+        end
+
+      end
+
+    end
+  end
 end

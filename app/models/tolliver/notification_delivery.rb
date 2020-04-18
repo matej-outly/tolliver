@@ -10,9 +10,10 @@
 # *****************************************************************************
 
 module Tolliver
-	class NotificationDelivery < ActiveRecord::Base
-		include Tolliver::Models::NotificationDelivery
-		include Tolliver::Models::NotificationDelivery::Batch
-		include Tolliver::Models::NotificationDelivery::Instantly
-	end
+  class NotificationDelivery < ActiveRecord::Base
+    include Tolliver::Utils::Enum
+    include Tolliver::Models::NotificationDelivery
+    include Tolliver::Models::NotificationDelivery::Batch
+    include Tolliver::Models::NotificationDelivery::Instantly
+  end
 end
