@@ -16,4 +16,4 @@ root_dir="$script_dir/.."
 build_dir="$root_dir/build"
 
 # Push to rubygems
-# TODO
+gem push "$build_dir"/tolliver-*
