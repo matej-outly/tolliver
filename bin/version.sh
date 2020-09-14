@@ -20,7 +20,7 @@ development_version="$1.dev"
 current_version=`cat "$root_dir/VERSION"`
 
 # Config git
-git config user.email "matej.outly@gmail.cz"
+git config user.email "matej.outly@gmail.com"
 git config user.name "Matěj Outlý"
 
 if [ "$production_version" != "$current_version" ]; then
