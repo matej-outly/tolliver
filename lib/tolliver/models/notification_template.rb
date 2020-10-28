@@ -27,6 +27,7 @@ module Tolliver
         # *********************************************************************
 
         validates_presence_of :ref, :subject
+        validates :ref, uniqueness: true
 
       end
 
