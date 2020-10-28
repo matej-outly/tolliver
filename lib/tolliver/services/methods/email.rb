@@ -20,10 +20,10 @@ module Tolliver
           # Send email
           begin
             Tolliver::NotificationMailer.notify(notification, notification_receiver).deliver_now
-            notification_receiver.state = 'sent'
+            notification_receiver.status = 'sent'
           #rescue Net::SMTPFatalError, Net::SMTPSyntaxError
           rescue StandardError => e
-            notification_receiver.state = 'error'
+            notification_receiver.status = 'error'
             notification_receiver.error_message = e.message
           end
 

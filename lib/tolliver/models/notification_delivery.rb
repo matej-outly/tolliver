@@ -52,7 +52,7 @@ module Tolliver
 
       def method_service
         if @method_service.nil?
-          @method_service = "Tolliver::Services::Methods::#{method_ref.to_s.capitalize}".constantize.new
+          @method_service = "Tolliver::Services::Methods::#{self.method.to_s.capitalize}".constantize.new
         end
         @method_service
       end
@@ -62,7 +62,7 @@ module Tolliver
       # ***********************************************************************
 
       def policy
-        case self.kind.to_sym
+        case self.method.to_sym
         when :email then
           :batch
         when :sms then

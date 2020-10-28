@@ -18,7 +18,7 @@ module Tolliver
 
         # Sender
         @sender_email = Tolliver.email_sender
-        raise Tolliver::Errors::StandardError.new("Please specify sender.") if @sender.nil?
+        raise Tolliver::Errors::StandardError.new("Please specify sender.") if @sender_email.nil?
         unless Tolliver.email_sender_name.blank?
           @sender_email = "#{Tolliver.email_sender_name} <#{@sender_email}>"
         end

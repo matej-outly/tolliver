@@ -34,6 +34,7 @@ module Tolliver
 
       # Deliver notification to receivers by all configured methods
       def deliver(notification)
+        return nil if notification.nil?
 
         # Load balancing
         unless Tolliver.load_balance.blank?
@@ -58,6 +59,13 @@ module Tolliver
           notification_delivery.policy_service.deliver(notification_delivery)
         end
 
+        true
+      end
+
+      def reset_delivery(notification)
+        return nil if notification.nil?
+        notification.notification_deliveries.update_all(sent_count: 0, sent_at: nil)
+        notification.notification_receivers.update_all(sent_at: nil, received_at: nil, status: :created, error_message: nil)
         true
       end
 

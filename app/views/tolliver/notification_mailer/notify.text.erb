@@ -1,1 +1,1 @@
-<%= @notification.message.to_s.strip_tags %>
+<%= ActionController::Base.helpers.strip_tags(@notification.message.to_s) %>

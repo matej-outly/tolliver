@@ -56,6 +56,14 @@ module Tolliver
     Tolliver::Services::Delivery.instance.deliver(notification)
   end
 
+  def self.enqueue_for_delivery(notification)
+    Tolliver::Services::Delivery.instance.enqueue_for_delivery(notification)
+  end
+
+  def self.reset_delivery(notification)
+    Tolliver::Services::Delivery.instance.reset_delivery(notification)
+  end
+
   # *************************************************************************
   # Configuration
   # *************************************************************************

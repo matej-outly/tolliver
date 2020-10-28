@@ -20,9 +20,9 @@ module Tolliver
           # Send SMS
           begin
             provider.deliver(notification_receiver.receiver_contact, notification.message.strip_tags)
-            notification_receiver.state = 'sent'
+            notification_receiver.status = 'sent'
           rescue StandardError => e
-            notification_receiver.state = 'error'
+            notification_receiver.status = 'error'
             notification_receiver.error_message = e.message
           end
 

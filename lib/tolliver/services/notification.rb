@@ -138,7 +138,7 @@ module Tolliver
 
       def interpret_named_params(text, params)
         text.gsub(/%{[^{}]+}/) do |match|
-          key = match[2..-2].to_s.trim
+          key = match[2..-2].to_s.strip
           if params.has_key?(key)
             params[key] # return param value if key found
           else
