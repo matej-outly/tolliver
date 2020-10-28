@@ -11,7 +11,6 @@
 
 module Tolliver
   class Notification < ActiveRecord::Base
-    include Tolliver::Utils::Enum
     include Tolliver::Models::Notification
   end
 end

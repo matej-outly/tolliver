@@ -14,23 +14,29 @@ require "tolliver/engine"
 
 # Models
 require "tolliver/models/notification"
+require "tolliver/models/notification_attachment"
 require "tolliver/models/notification_delivery"
-require "tolliver/models/notification_delivery/batch"
-require "tolliver/models/notification_delivery/instantly"
 require "tolliver/models/notification_receiver"
-require "tolliver/models/notification_receiver/email"
-require "tolliver/models/notification_receiver/sms"
 require "tolliver/models/notification_template"
 
 # Services
 require "tolliver/services/notification"
 require "tolliver/services/delivery"
+require "tolliver/services/policies/batch"
+require "tolliver/services/policies/instantly"
+require "tolliver/services/methods/email"
+require "tolliver/services/methods/sms"
 
 # Mailers
 require "tolliver/mailers/notification_mailer"
 
 # Utils
 require "tolliver/utils/enum"
+
+# Errors
+require "tolliver/errors/standard_error"
+require "tolliver/errors/bad_request"
+require "tolliver/errors/not_found"
 
 module Tolliver
 
@@ -42,8 +48,13 @@ module Tolliver
   # Services
   # *************************************************************************
 
-  include Tolliver::Services::Notification
-  include Tolliver::Services::Delivery
+  def self.notify(options)
+    Tolliver::Services::Notification.instance.notify(options)
+  end
+
+  def self.deliver(notification)
+    Tolliver::Services::Delivery.instance.deliver(notification)
+  end
 
   # *************************************************************************
   # Configuration
@@ -52,18 +63,6 @@ module Tolliver
   # Default way to setup module
   def self.setup
     yield self
-  end
-
-  # *************************************************************************
-  # SMS
-  # *************************************************************************
-
-  def self.sms_provider_obj
-    if @sms_provider_obj.nil?
-      sms_provider_class_name = "Tolliver::Services::Sms::#{Tolliver.sms_provider.to_s.to_camel}"
-      @sms_provider_obj = sms_provider_class_name.constantize.new(Tolliver.sms_provider_params)
-    end
-    return @sms_provider_obj
   end
 
   # *************************************************************************
@@ -78,6 +77,15 @@ module Tolliver
   end
 
   @@notification_model = "Tolliver::Notification"
+
+  # Notification attachment model
+  mattr_accessor :notification_attachment_model
+
+  def self.notification_attachment_model
+    return @@notification_attachment_model.constantize
+  end
+
+  @@notification_attachment_model = "Tolliver::NotificationAttachment"
 
   # Notification delivery model
   mattr_accessor :notification_delivery_model
@@ -106,33 +114,14 @@ module Tolliver
 
   @@notification_template_model = "Tolliver::NotificationTemplate"
 
-  # People selector model
-  mattr_accessor :people_selector_model
-
-  def self.people_selector_model
-    return @@people_selector_model.constantize
-  end
-
-  @@people_selector_model = nil
-
-  # Available notification template refs. For each defined ref there will be
-  # an automatically created record in the notification_templates table.
-  # System administrator can define content of this template via admin
-  # interface.
-  mattr_accessor :template_refs
-  @@template_refs = [
-#		:some_notification_ref_1,
-#		:some_notification_ref_2,
-  ]
-
-  # Delivery kinds
+  # Delivery methods
   #
-  # Available kinds:
+  # Available methods:
   # - email
   # - sms
   # - whatever
-  mattr_accessor :delivery_kinds
-  @@delivery_kinds = [
+  mattr_accessor :delivery_methods
+  @@delivery_methods = [
       :email
   ]
 
@@ -144,13 +133,13 @@ module Tolliver
   mattr_accessor :load_balance
   @@load_balance = nil
 
-  # Mailer sender
-  mattr_accessor :mailer_sender
-  #@@mailer_sender = "test@domain.com" to be set in module initializer if needed
+  # E-mail sender
+  mattr_accessor :email_sender
+  #@@email_sender = "test@domain.com" to be set in module initializer if needed
 
-  # Mailer sender name
-  mattr_accessor :mailer_sender_name
-  #@@mailer_sender_name = "Test sender" to be set in module initializer if needed
+  # E-mail sender name
+  mattr_accessor :email_sender_name
+  #@@email_sender_name = "Test sender" to be set in module initializer if needed
 
   # Used SMS provider
   mattr_accessor :sms_provider

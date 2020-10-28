@@ -9,226 +9,157 @@
 # *
 # *****************************************************************************
 
+require 'singleton'
+
 module Tolliver
   module Services
-    module Notification
-      extend ActiveSupport::Concern
+    class Notification
+      include Singleton
 
-      module ClassMethods
+      def notify(options)
+        options = options.deep_symbolize_keys
 
-        def notify(content, receivers, options = {})
+        # Object
+        notification = Tolliver.notification_model.new
 
-          # Object
-          notification = Tolliver.notification_model.new
+        Tolliver.notification_model.transaction do
 
-          Tolliver.notification_model.transaction do
+          # Get notification template object
+          template = options[:template]
+          raise Tolliver::Errors::BadRequest.new('Missing template.') if template.blank?
+          notification_template = Tolliver.notification_template_model.where(ref: template).first
+          notification_template = Tolliver.notification_template_model.where(id: template).first if notification_template.nil?
+          raise Tolliver::Errors::NotFound.new("Template #{template.to_s} not found.") if notification_template.nil?
 
-            # Get subject, message and params
-            subject, message, params, notification_template = parse_content(content)
+          if !notification_template.is_disabled && !notification_template.message.blank?
 
-            if !message.blank?
+            # Interpret params and store it in DB
+            params = map_params(options[:params] || {})
+            notification.message = interpret_named_params(notification_template.message, params)
+            notification.subject = interpret_named_params(notification_template.subject, params)
 
-              # Interpret params and store it in DB
-              notification.message = interpret_params(message, params)
-              notification.subject = interpret_params(subject, params)
+            # Notification template
+            notification.notification_template = notification_template
 
-              # Notification template
-              notification.notification_template = notification_template
+            # Signature
+            unless options[:signature].blank?
+              notification.message += options[:signature].to_s
+            end
 
-              # Kind
-              if options[:kind]
-                notification.kind = options[:kind]
+            # Save to DB
+            notification.save
+
+            # Attachments
+            unless options[:attachments].blank?
+              attachments = options[:attachments]
+              attachments = [attachments] unless attachments.is_a?(Array)
+              attachments.each do |attachment|
+                raise Tolliver::Errors::BadRequest.new('Missing attachment name.') if attachment[:name].blank?
+                raise Tolliver::Errors::BadRequest.new('Missing attachment data.') if attachment[:attachment].blank?
+                notification.notification_attachments.create(name: attachment[:name], attachment: attachment[:attachment])
+              end
+            end
+
+            unless notification_template.is_dry
+
+              # Delivery methods
+              if options[:methods].blank?
+                methods = Tolliver.delivery_methods
+              else
+                # Select only wanted delivery methods, but valid according to module config
+                methods = options[:methods]
+                methods = [methods] unless methods.is_a?(Array)
+                methods = methods.delete_if { |method| !Tolliver.delivery_methods.include?(method.to_sym) }
               end
 
-              # Sender
-              if options[:sender]
-                notification.sender = options[:sender]
-              end
+              methods.each do |method|
 
-              # URL
-              if options[:url]
-                notification.url = options[:url]
-              end
+                # Delivery object
+                notification_delivery = notification.notification_deliveries.create(method: method)
 
-              # Attachment
-              if options[:attachment]
-                notification.attachment = options[:attachment]
-              end
-
-              # Signature
-              if !options[:signature].blank?
-                notification.message += options[:signature].to_s
-              end
-
-              # Save to DB
-              notification.save
-
-              if !notification_template || notification_template.dry != true
-
-                # Delivery kinds
-                if options[:delivery_kinds] # Select only wanted delivery kinds, but valid according to module config
-                  delivery_kinds = options[:delivery_kinds]
-                  delivery_kinds = delivery_kinds.delete_if { |delivery_kind| !Tolliver.delivery_kinds.include?(delivery_kind.to_sym) }
-                else
-                  delivery_kinds = Tolliver.delivery_kinds
+                # Is postponed
+                if options[:is_postponed]
+                  notification_delivery.is_postponed = options[:is_postponed]
                 end
 
-                # Get valid receivers
-                receivers = parse_receivers(receivers)
-
-                delivery_kinds.each do |delivery_kind|
-
-                  # Delivery object
-                  notification_delivery = notification.notification_deliveries.create(kind: delivery_kind)
-
-                  # Filter out receivers not valid for this delivery kind
-                  if delivery_kind == :email
-                    filtered_receivers = receivers.delete_if { |receiver| !receiver.respond_to?(:email) }
-                  elsif delivery_kind == :sms
-                    filtered_receivers = receivers.delete_if { |receiver| !receiver.respond_to?(:phone) }
-                  else
-                    filtered_receivers = receivers.dup
-                  end
-
-                  # Save to DB
-                  filtered_receivers.each do |receiver|
-                    notification_delivery.notification_receivers.create(receiver: receiver)
-                  end
-                  notification_delivery.sent_count = 0
-                  notification_delivery.receivers_count = filtered_receivers.size
-                  notification_delivery.save
-
+                # Sender
+                unless options[:sender].blank?
+                  raise Tolliver::Errors::BadRequest.new('Missing sender ref.') if options[:sender][:ref].blank?
+                  raise Tolliver::Errors::BadRequest.new('Missing sender contact.') if options[:sender][:contact].blank?
+                  notification_delivery.sender_ref = options[:sender][:ref]
+                  notification_delivery.sender_contact = options[:sender][:contact]
                 end
+
+                # Receivers
+                receivers = options[:receivers] || []
+                raise Tolliver::Errors::BadRequest.new('Missing receivers.') if receivers.blank? || receivers.empty?
+                receivers = [receivers] unless receivers.is_a?(Array)
+                filtered_receivers = receivers.dup # TODO contact validation based on method and filter
+
+                # Save to DB
+                filtered_receivers.each do |receiver|
+                  raise Tolliver::Errors::BadRequest.new('Missing sender ref.') if receiver[:ref].blank?
+                  raise Tolliver::Errors::BadRequest.new('Missing sender contact.') if receiver[:contact].blank?
+                  notification_delivery.notification_receivers.create(receiver_ref: receiver[:ref], receiver_contact: receiver[:contact])
+                end
+                notification_delivery.sent_count = 0
+                notification_delivery.receivers_count = filtered_receivers.size
+                notification_delivery.save
 
               end
 
-            else
-              notification = nil # Do not create notification with empty message
             end
-
-          end
-
-          # Enqueue for delivery
-          notification.enqueue_for_delivery if !notification.nil?
-
-          return notification
-        end
-
-        def parse_content(content)
-
-          # Arrayize
-          if !content.is_a?(Array)
-            content = [content]
-          end
-
-          # Check for empty
-          if content.length == 0
-            raise "Notification is incorrectly defined."
-          end
-
-          # Extract content definition and params
-          content_def = content.shift
-
-          # Preset
-          params = content
-          subject = nil
-          message = nil
-          notification_template = nil
-
-          if content_def.is_a?(Symbol)
-
-            notification_template = Tolliver.notification_template_model.where(ref: content_def.to_s).first
-            if notification_template.nil?
-              raise "Notification template #{content_def.to_s} not found."
-            end
-            if notification_template.disabled != true
-              message = notification_template.message
-              subject = notification_template.subject
-            end
-
-          elsif content_def.is_a?(Hash) # Defined by hash containing subject and message
-
-            subject = content_def[:subject]
-            message = content_def[:message]
-
-          elsif content_def.is_a?(String)
-
-            message = content_def
 
           else
-            raise "Notification is incorrectly defined."
+            notification = nil # Do not create notification with empty message
           end
 
-          # First parameter is message (all other parameters are indexed from 1)
-          params.unshift(message)
-
-          return [subject, message, params, notification_template]
         end
 
-        def parse_receivers(receivers)
-
-          # Arrayize
-          if !receivers.is_a?(Array)
-            receivers = [receivers]
-          end
-
-          # Automatic receivers defined by string
-          new_receivers = []
-          receivers.each do |receiver|
-            if receiver.is_a?(String) || receiver.is_a?(Symbol)
-              if Tolliver.people_selector_model && Tolliver.people_selector_model.respond_to?(:decode_value) && Tolliver.people_selector_model.respond_to?(:people)
-                ref, params = Tolliver.people_selector_model.decode_value(receiver.to_s)
-                new_receivers.concat(Tolliver.people_selector_model.people(ref, params).to_a) # Use people selector to generate receivers
-              end
-            else
-              new_receivers << receiver
-            end
-          end
-          receivers = new_receivers
-
-          # Receivers responding to email or users
-          new_receivers = []
-          receivers.each do |receiver|
-            if receiver.respond_to?(:email)
-              new_receivers << receiver
-            else
-              if receiver.respond_to?(:user)
-                new_receivers << receiver.user
-              else
-                if receiver.respond_to?(:users)
-                  new_receivers.concat(receiver.users.to_a)
-                end
-              end
-            end
-          end
-          receivers = new_receivers
-
-          return receivers
+        # Enqueue for delivery
+        if !notification.nil? && !options[:is_postponed]
+          notification.enqueue_for_delivery
         end
 
-        #
-        # Interpret params into given text
-        #
-        def interpret_params(text, params)
-          return text.gsub(/%{[^{}]+}/) do |match|
+        notification
+      end
 
-            # Substitude all %1, %2, %3, ... to a form which can be evaluated
-            template_to_eval = match[2..-2].gsub(/%([0-9]+)/, "params[\\1]")
+      protected
 
-            # Evaluate match
-            begin
-              evaluated_match = eval(template_to_eval)
-            rescue
-              evaluated_match = ""
-            end
+      def map_params(params)
+        result = {}
+        params.each do |param|
+          raise Tolliver::Errors::BadRequest.new('Missing param key.') if param[:key].blank?
+          raise Tolliver::Errors::BadRequest.new('Missing param value.') if param[:value].nil?
+          result[param[:key].to_s] = param[:value]
+        end
+        result
+      end
 
-            # Result
-            evaluated_match
+      def interpret_named_params(text, params)
+        text.gsub(/%{[^{}]+}/) do |match|
+          key = match[2..-2].to_s.trim
+          if params.has_key?(key)
+            params[key] # return param value if key found
+          else
+            match # return entire match if key not found
           end
         end
+      end
 
+      def interpret_positional_params(text, params)
+        text.gsub(/%{[^{}]+}/) do |match|
+          template_to_eval = match[2..-2].gsub(/%([0-9]+)/, "params[\\1]") # substitute all %1, %2, %3, ... to a form which can be evaluated
+          begin
+            evaluated_match = eval(template_to_eval) # evaluate match against params
+          rescue
+            evaluated_match = ""
+          end
+          evaluated_match
+        end
       end
 
     end
+
   end
 end

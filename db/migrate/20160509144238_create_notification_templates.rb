@@ -1,4 +1,4 @@
-class CreateNotificationTemplates < ActiveRecord::Migration
+class CreateNotificationTemplates < ActiveRecord::Migration[6.0]
   def change
     create_table :notification_templates do |t|
 
@@ -6,15 +6,15 @@ class CreateNotificationTemplates < ActiveRecord::Migration
       t.timestamps null: true
 
       # Identification
-      t.string :ref
+      t.string :ref, index: true
 
       # Message
       t.string :subject
       t.text :message
 
       # Handlers
-      t.boolean :disabled
-      t.boolean :dry
+      t.boolean :is_disabled
+      t.boolean :is_dry
 
     end
   end

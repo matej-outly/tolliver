@@ -2,15 +2,15 @@
 # * Copyright (c) 2019 Matěj Outlý
 # *****************************************************************************
 # *
-# * Notification template
+# * Notification attachment
 # *
 # * Author: Matěj Outlý
-# * Date  : 9. 5. 2016
+# * Date  : 27. 10. 2020
 # *
 # *****************************************************************************
 
 module Tolliver
-  class NotificationTemplate < ActiveRecord::Base
-    include Tolliver::Models::NotificationTemplate
+  class NotificationAttachment < ActiveRecord::Base
+    include Tolliver::Models::NotificationAttachment
   end
 end

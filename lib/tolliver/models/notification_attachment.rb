@@ -2,16 +2,16 @@
 # * Copyright (c) 2019 Matěj Outlý
 # *****************************************************************************
 # *
-# * Notification template
+# * Notification attachment
 # *
 # * Author: Matěj Outlý
-# * Date  : 9. 5. 2016
+# * Date  : 27. 10. 2020
 # *
 # *****************************************************************************
 
 module Tolliver
   module Models
-    module NotificationTemplate
+    module NotificationAttachment
       extend ActiveSupport::Concern
 
       included do
@@ -20,27 +20,13 @@ module Tolliver
         # Structure
         # *********************************************************************
 
-        has_many :notifications, class_name: Tolliver.notification_model.to_s, dependent: :nullify
+        belongs_to :notification, class_name: Tolliver.notification_model.to_s
 
         # *********************************************************************
         # Validators
         # *********************************************************************
 
-        validates_presence_of :ref, :subject
-
-      end
-
-      module ClassMethods
-
-        def permitted_columns
-          [
-              :ref,
-              :subject,
-              :message,
-              :is_disabled,
-              :is_dry
-          ]
-        end
+        validates_presence_of :notification_id
 
       end
 

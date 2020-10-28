@@ -14,29 +14,26 @@ module Tolliver
     module NotificationMailer
       extend ActiveSupport::Concern
 
-      def notify(notification, receiver)
+      def notify(notification, notification_receiver)
 
         # Sender
-        @sender = Tolliver.mailer_sender
-        raise "Please specify sender." if @sender.nil?
-        if !Tolliver.mailer_sender_name.blank?
-          @sender = "#{Tolliver.mailer_sender_name} <#{@sender}>"
+        @sender_email = Tolliver.email_sender
+        raise Tolliver::Errors::StandardError.new("Please specify sender.") if @sender.nil?
+        unless Tolliver.email_sender_name.blank?
+          @sender_email = "#{Tolliver.email_sender_name} <#{@sender_email}>"
         end
 
         # Other view data
         @notification = notification
-        @receiver = receiver
+        @notification_receiver = notification_receiver
 
-        # Subject
-        subject = !@notification.subject.blank? ? @notification.subject : I18n.t("activerecord.mailers.tolliver.notification.notify.default_subject", url: main_app.root_url)
-
-        # Attachment
-        if !notification.attachment.blank?
-          attachments[File.basename(notification.attachment)] = File.read(notification.attachment)
+        # Attachments
+        notification.notification_attachments.each do |notification_attachment|
+          attachments[notification_attachment.name] = notification_attachment.attachment
         end
 
         # Mail
-        mail(from: @sender, to: receiver.email, subject: subject)
+        mail(from: @sender_email, to: @notification_receiver.receiver_contact, subject: @notification.subject)
       end
 
     end

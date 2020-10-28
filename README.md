@@ -12,7 +12,7 @@ send it in a batch with different delivery methods:
 Add gem to your Gemfile:
 
 ```ruby
-gem "tolliver"
+gem 'tolliver'
 ```
 
 Add database migrations to you application (you can modify DB structure accordingly before migrating):
@@ -26,12 +26,9 @@ You can configure module through `config/initializers/tolliver.rb` file:
 
 ```ruby
 Tolliver.setup do |config|
-  config.mailer_sender = "no-reply@domain.com"
-  config.delivery_kinds = [
+  config.mailer_sender = 'no-reply@domain.com'
+  config.delivery_methods = [
       :email
-  ]
-  config.template_refs = [
-      :user_new_password,
   ]
 end
 ```
@@ -39,18 +36,31 @@ end
 Available options:
 
 - notification_model
+- notification_attachment_model
 - notification_delivery_model
 - notification_receiver_model
 - notification_template_model
-- people_selector_model
-- mailer_sender
-- delivery_kinds
-- template_refs
+- email_sender
+- email_sender_name
+- sms_sender
+- sms_provider
+- sms_provider_params
+- delivery_methods
 
 ## Usage
 
 To enter new notification into the system, just call `notify` method:
 
 ```ruby
-Tolliver.notify([:sample_notification_ref, param_1, param_2], [receiver_1, receiver_2], options)
+Tolliver.notify(
+  template: :template_ref, 
+  params: [
+    {key: :key_1, value: :value_1},
+    {key: :key_2, value: :value_2}
+  ], 
+  receivers: [
+    {ref: :receiver_1, contact: "receiver_1@domain.tld"},
+    {ref: :receiver_2, contact: "receiver_2@domain.tld"}, 
+  ]
+)
 ```

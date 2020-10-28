@@ -27,13 +27,13 @@ module Tolliver
         # Validators
         # *********************************************************************
 
-        validates_presence_of :notification_id, :kind
+        validates_presence_of :notification_id, :method
 
         # *********************************************************************
-        # Kind
+        # Delivery method
         # *********************************************************************
 
-        enum_column :kind, Tolliver.delivery_kinds
+        enum_column :method, Tolliver.delivery_methods
 
         # *********************************************************************
         # Queue kind
@@ -47,18 +47,36 @@ module Tolliver
       end
 
       # ***********************************************************************
+      # Delivery method
+      # ***********************************************************************
+
+      def method_service
+        if @method_service.nil?
+          @method_service = "Tolliver::Services::Methods::#{method_ref.to_s.capitalize}".constantize.new
+        end
+        @method_service
+      end
+
+      # ***********************************************************************
       # Policy
       # ***********************************************************************
 
       def policy
-        return case self.kind.to_sym
-               when :email then
-                 :batch
-               when :sms then
-                 :batch
-               else
-                 :instantly
-               end
+        case self.kind.to_sym
+        when :email then
+          :batch
+        when :sms then
+          :batch
+        else
+          :instantly
+        end
+      end
+
+      def policy_service
+        if @policy_service.nil?
+          @policy_service = "Tolliver::Services::Policies::#{self.policy.to_s.capitalize}".constantize.new
+        end
+        @policy_service
       end
 
       # ***********************************************************************
@@ -67,9 +85,9 @@ module Tolliver
 
       def done
         if self.sent_count && self.receivers_count
-          return self.sent_count.to_s + "/" + self.receivers_count.to_s
+          self.sent_count.to_s + "/" + self.receivers_count.to_s
         else
-          return nil
+          nil
         end
       end
 
@@ -77,34 +95,8 @@ module Tolliver
       # Service
       # ***********************************************************************
 
-      # Deliver by correct policy
       def deliver
-        self.class.deliver(self.id)
-      end
-
-      module ClassMethods
-
-        # Deliver by correct policy
-        def deliver(notification_delivery_id)
-
-          # Find notification delivery object
-          notification_delivery = Tolliver.notification_delivery_model.find_by_id(notification_delivery_id)
-          return nil if notification_delivery.nil?
-
-          # "Instanly" policy
-          if notification_delivery.policy == :instantly
-            self.deliver_instantly(notification_delivery_id)
-
-            # "Batch" policy
-          elsif notification_delivery.policy == :batch
-            QC.enqueue("#{self.to_s}.deliver_batch_and_enqueue", notification_delivery_id)
-          else
-            return nil
-          end
-
-          return notification_delivery
-        end
-
+        self.policy_service.deliver(self)
       end
 
     end
