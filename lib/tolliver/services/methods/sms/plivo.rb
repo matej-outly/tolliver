@@ -9,24 +9,23 @@
 # *
 # *****************************************************************************
 
-require 'plivo'
-
 module Tolliver
   module Services
     module Methods
-      module Sms
+      class Sms
         class Plivo
 
           def initialize(params = {})
+            require 'plivo'
             if params[:auth_id].blank? || params[:auth_token].blank?
-              raise Tolliver::Errors::StandardError.new('Please provide Auth ID and Auth Token in provider params.')
+              raise Tolliver::Errors::StandardError.new('Please provide Auth ID and Auth Token in SMS provider params.')
             end
             @auth_id = params[:auth_id]
             @auth_token = params[:auth_token]
             @api = ::Plivo::RestAPI.new(@auth_id, @auth_token)
           end
 
-          def deliver(receiver, message)
+          def deliver(notification, notification_receiver)
 
             # Check message length.
             if message.bytesize > 200
@@ -36,8 +35,8 @@ module Tolliver
             # Request API
             response = @api.send_message({
                                              'src' => Tolliver.sms_sender, # TODO: This should be improved to take sender from number pool and remember number / message mapping
-                                             'dst' => receiver.to_s,
-                                             'text' => message.to_s,
+                                             'dst' => notification_receiver.receiver_contact.to_s,
+                                             'text' => ActionController::Base.helpers.strip_tags(notification.message.to_s),
                                              'method' => 'POST'
                                          })
 

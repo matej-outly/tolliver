@@ -25,7 +25,10 @@ require "tolliver/services/delivery"
 require "tolliver/services/policies/batch"
 require "tolliver/services/policies/instantly"
 require "tolliver/services/methods/email"
+require "tolliver/services/methods/email/smtp"
+require "tolliver/services/methods/email/mailgun"
 require "tolliver/services/methods/sms"
+require "tolliver/services/methods/sms/plivo"
 
 # Mailers
 require "tolliver/mailers/notification_mailer"
@@ -149,16 +152,24 @@ module Tolliver
   mattr_accessor :email_sender_name
   #@@email_sender_name = "Test sender" to be set in module initializer if needed
 
-  # Used SMS provider
-  mattr_accessor :sms_provider
-  @@sms_provider = :plivo
+  # Used e-mail provider
+  mattr_accessor :email_provider
+  @@email_provider = :smtp
 
-  # SMS provider params
-  mattr_accessor :sms_provider_params
-  @@sms_provider_params = {}
+  # E-mail provider params
+  mattr_accessor :email_provider_params
+  @@email_provider_params = {}
 
   # Used SMS provider
   mattr_accessor :sms_sender
   #@@sms_sender = "+420 123 456 789" to be set in module initializer if needed
+
+  # Used SMS provider
+  mattr_accessor :sms_provider
+  @@sms_provider = nil
+
+  # SMS provider params
+  mattr_accessor :sms_provider_params
+  @@sms_provider_params = {}
 
 end

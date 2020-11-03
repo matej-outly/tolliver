@@ -15,11 +15,14 @@ module Tolliver
       class Email
 
         def deliver(notification_receiver)
+          return false if provider.nil?
+
+          # Prepare notification
           notification = notification_receiver.notification_delivery.notification
 
           # Send email
           begin
-            Tolliver::NotificationMailer.notify(notification, notification_receiver).deliver_now
+            provider.deliver(notification, notification_receiver)
             notification_receiver.status = 'sent'
           #rescue Net::SMTPFatalError, Net::SMTPSyntaxError
           rescue StandardError => e
@@ -34,6 +37,16 @@ module Tolliver
           notification_receiver.save
 
           true
+        end
+
+        protected
+
+        def provider
+          if @provider.nil? && Tolliver.email_provider
+            provider_class_name = "Tolliver::Services::Methods::Email::#{Tolliver.email_provider.to_s.camelize}"
+            @provider = provider_class_name.constantize.new(Tolliver.email_provider_params)
+          end
+          @provider
         end
 
       end

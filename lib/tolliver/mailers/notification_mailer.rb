@@ -18,7 +18,7 @@ module Tolliver
 
         # Sender
         @sender_email = Tolliver.email_sender
-        raise Tolliver::Errors::StandardError.new("Please specify sender.") if @sender_email.nil?
+        raise Tolliver::Errors::StandardError.new("Please specify e-mail sender.") if @sender_email.nil?
         unless Tolliver.email_sender_name.blank?
           @sender_email = "#{Tolliver.email_sender_name} <#{@sender_email}>"
         end
@@ -33,7 +33,7 @@ module Tolliver
         end
 
         # Mail
-        mail(from: @sender_email, to: @notification_receiver.receiver_contact, subject: @notification.subject)
+        mail(from: @sender_email, to: @notification_receiver.receiver_contact.to_s, subject: @notification.subject)
       end
 
     end

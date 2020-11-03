@@ -15,11 +15,14 @@ module Tolliver
       class Sms
 
         def deliver(notification_receiver)
+          return false if provider.nil?
+
+          # Prepare notification
           notification = notification_receiver.notification_delivery.notification
 
           # Send SMS
           begin
-            provider.deliver(notification_receiver.receiver_contact, notification.message.strip_tags)
+            provider.deliver(notification, notification_receiver)
             notification_receiver.status = 'sent'
           rescue StandardError => e
             notification_receiver.status = 'error'
@@ -38,7 +41,7 @@ module Tolliver
         protected
 
         def provider
-          if @provider.nil?
+          if @provider.nil? && Tolliver.sms_provider
             provider_class_name = "Tolliver::Services::Methods::Sms::#{Tolliver.sms_provider.to_s.camelize}"
             @provider = provider_class_name.constantize.new(Tolliver.sms_provider_params)
           end
