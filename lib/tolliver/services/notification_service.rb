@@ -13,7 +13,7 @@ require 'singleton'
 
 module Tolliver
   module Services
-    class Notification
+    class NotificationService
       include Singleton
 
       def notify(options)
@@ -98,8 +98,8 @@ module Tolliver
 
                 # Save to DB
                 filtered_receivers.each do |receiver|
-                  raise Tolliver::Errors::BadRequest.new('Missing sender ref.') if receiver[:ref].blank?
-                  raise Tolliver::Errors::BadRequest.new('Missing sender contact.') if receiver[:contact].blank?
+                  raise Tolliver::Errors::BadRequest.new('Missing receiver ref.') if receiver[:ref].blank?
+                  raise Tolliver::Errors::BadRequest.new('Missing receiver contact.') if receiver[:contact].blank?
                   notification_delivery.notification_receivers.create(receiver_ref: receiver[:ref], receiver_contact: receiver[:contact])
                 end
                 notification_delivery.sent_count = 0

@@ -52,15 +52,15 @@ module Tolliver
       # ***********************************************************************
 
       def deliver
-        Tolliver::Services::Delivery.instance.deliver(self)
+        Tolliver::Services::DeliveryService.instance.deliver(self)
       end
 
       def enqueue_for_delivery
-        Tolliver::Services::Delivery.instance.enqueue_for_delivery(self)
+        Tolliver::Services::DeliveryService.instance.enqueue_for_delivery(self)
       end
 
       def reset_delivery
-        Tolliver::Services::Delivery.instance.reset_delivery(self)
+        Tolliver::Services::DeliveryService.instance.reset_delivery(self)
       end
 
     end

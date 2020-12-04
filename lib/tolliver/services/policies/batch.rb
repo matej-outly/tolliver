@@ -19,25 +19,14 @@ module Tolliver
           # Input validation
           return nil if notification_delivery.nil? || notification_delivery.policy != :batch
 
-          # Enqueue in QC
-          QC.enqueue("#{self.class.to_s}.deliver", notification_delivery.id, batch_size)
+          # Enqueue
+          Tolliver::Jobs::BatchPolicyJob.perform_later(notification_delivery.id, batch_size)
         end
-
-        # Entry point for QC
-        def self.deliver(notification_delivery_id, batch_size = 10)
-
-          # Instantiate notification delivery object
-          notification_delivery = Tolliver.notification_delivery_model.find_by_id(notification_delivery_id)
-          return nil if notification_delivery.nil? || notification_delivery.policy != :batch
-
-          # Call internal logic
-          policy_service = self.new
-          policy_service.send(:deliver_batch_and_enqueue, notification_delivery, batch_size)
-        end
-
-        protected
 
         def deliver_batch_and_enqueue(notification_delivery, batch_size = 10)
+
+          # Input validation
+          return nil if notification_delivery.nil? || notification_delivery.policy != :batch
 
           # Send single batch
           remaining = deliver_batch(notification_delivery, batch_size)
@@ -58,6 +47,9 @@ module Tolliver
         end
 
         def deliver_batch(notification_delivery, batch_size = 10)
+
+          # Input validation
+          return nil if notification_delivery.nil? || notification_delivery.policy != :batch
 
           # Nothing to do
           return 0 if notification_delivery.sent_count == notification_delivery.receivers_count

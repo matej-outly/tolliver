@@ -13,23 +13,12 @@ require 'singleton'
 
 module Tolliver
   module Services
-    class Delivery
+    class DeliveryService
       include Singleton
 
       def enqueue_for_delivery(notification)
         return nil if notification.nil?
-        QC.enqueue("#{self.class.to_s}.deliver", notification.id)
-      end
-
-      # Entry point for QC
-      def self.deliver(notification_id)
-
-        # Instantiate notification object
-        notification = Tolliver.notification_model.find_by_id(notification_id)
-        return nil if notification.nil?
-
-        # Call standard API
-        self.instance.deliver(notification)
+        Tolliver::Jobs::DeliveryJob.perform_later(notification.id)
       end
 
       # Deliver notification to receivers by all configured methods

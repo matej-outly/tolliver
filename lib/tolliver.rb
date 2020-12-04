@@ -20,8 +20,8 @@ require "tolliver/models/notification_receiver"
 require "tolliver/models/notification_template"
 
 # Services
-require "tolliver/services/notification"
-require "tolliver/services/delivery"
+require "tolliver/services/notification_service"
+require "tolliver/services/delivery_service"
 require "tolliver/services/policies/batch"
 require "tolliver/services/policies/instantly"
 require "tolliver/services/methods/email"
@@ -29,6 +29,10 @@ require "tolliver/services/methods/email/smtp"
 require "tolliver/services/methods/email/mailgun"
 require "tolliver/services/methods/sms"
 require "tolliver/services/methods/sms/plivo"
+
+# Jobs
+require "tolliver/jobs/delivery_job"
+require "tolliver/jobs/batch_policy_job"
 
 # Mailers
 require "tolliver/mailers/notification_mailer"
@@ -52,19 +56,19 @@ module Tolliver
   # *************************************************************************
 
   def self.notify(options)
-    Tolliver::Services::Notification.instance.notify(options)
+    Tolliver::Services::NotificationService.instance.notify(options)
   end
 
   def self.deliver(notification)
-    Tolliver::Services::Delivery.instance.deliver(notification)
+    Tolliver::Services::DeliveryService.instance.deliver(notification)
   end
 
   def self.enqueue_for_delivery(notification)
-    Tolliver::Services::Delivery.instance.enqueue_for_delivery(notification)
+    Tolliver::Services::DeliveryService.instance.enqueue_for_delivery(notification)
   end
 
   def self.reset_delivery(notification)
-    Tolliver::Services::Delivery.instance.reset_delivery(notification)
+    Tolliver::Services::DeliveryService.instance.reset_delivery(notification)
   end
 
   # *************************************************************************
