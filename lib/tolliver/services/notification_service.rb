@@ -35,8 +35,8 @@ module Tolliver
 
             # Interpret params and store it in DB
             params = map_params(options[:params] || {})
-            notification.message = interpret_named_params(notification_template.message, params)
-            notification.subject = interpret_named_params(notification_template.subject, params)
+            notification.message = eval_expressions(interpret_named_params(notification_template.message, params))
+            notification.subject = eval_expressions(interpret_named_params(notification_template.subject, params))
 
             # Notification template
             notification.notification_template = notification_template
@@ -147,7 +147,19 @@ module Tolliver
         end
       end
 
-      def interpret_positional_params(text, params)
+      def eval_expressions(text)
+        text.gsub(/%{[^{}]+}/) do |match|
+          template_to_eval = match[2..-2].to_s.strip
+          begin
+            evaluated_match = eval(template_to_eval) # evaluate match
+          rescue
+            evaluated_match = ""
+          end
+          evaluated_match
+        end
+      end
+
+      def interpret_positional_params_and_eval_expressions(text, params)
         text.gsub(/%{[^{}]+}/) do |match|
           template_to_eval = match[2..-2].gsub(/%([0-9]+)/, "params[\\1]") # substitute all %1, %2, %3, ... to a form which can be evaluated
           begin
