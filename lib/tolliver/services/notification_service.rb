@@ -55,8 +55,10 @@ module Tolliver
               attachments = [attachments] unless attachments.is_a?(Array)
               attachments.each do |attachment|
                 raise Tolliver::Errors::BadRequest.new('Missing attachment name.') if attachment[:name].blank?
-                raise Tolliver::Errors::BadRequest.new('Missing attachment data.') if attachment[:attachment].blank?
-                notification.notification_attachments.create(name: attachment[:name], attachment: attachment[:attachment])
+                if attachment[:attachment].blank? && attachment[:url].blank?
+                  raise Tolliver::Errors::BadRequest.new('Missing attachment data or URL.')
+                end
+                notification.notification_attachments.create(name: attachment[:name], attachment: attachment[:attachment], url: attachment[:url])
               end
             end
 

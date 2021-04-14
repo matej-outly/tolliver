@@ -30,6 +30,18 @@ module Tolliver
 
       end
 
+      def read
+        if @data.nil?
+          unless notification_attachment.attachment.blank?
+            @data = Base64.strict_decode64(notification_attachment.attachment) rescue nil
+          end
+          unless notification_attachment.url.blank?
+            @data = open(notification_attachment.url) { |f| f.read }
+          end
+        end
+        @data
+      end
+
     end
   end
 end

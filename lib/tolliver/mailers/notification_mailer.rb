@@ -29,7 +29,7 @@ module Tolliver
 
         # Attachments
         notification.notification_attachments.each do |notification_attachment|
-          attachments[notification_attachment.name] = notification_attachment.attachment
+          attachments[notification_attachment.name] = notification_attachment.read if notification_attachment.read
         end
 
         # Mail

@@ -38,7 +38,7 @@ module Tolliver
             message.body_text(ActionController::Base.helpers.strip_tags(notification.message.to_s))
             message.body_html(notification.message)
             notification.notification_attachments.each do |notification_attachment|
-              message.add_attachment(StringIO.new(notification_attachment.attachment), notification_attachment.name)
+              message.add_attachment(StringIO.new(notification_attachment.read), notification_attachment.name) if notification_attachment.read
             end
             response = @client.send_message(@domain, message)
             if response.code != 200
