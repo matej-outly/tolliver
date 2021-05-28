@@ -22,23 +22,18 @@ module Tolliver
             end
             @auth_id = params[:auth_id]
             @auth_token = params[:auth_token]
-            @api = ::Plivo::RestAPI.new(@auth_id, @auth_token)
+            @client = ::Plivo::RestClient.new(@auth_id, @auth_token)
           end
 
           def deliver(notification, notification_receiver)
 
-            # Check message length.
-            if message.bytesize > 200
-              raise 'Message too long.'
-            end
+            # Sender
+            raise Tolliver::Errors::StandardError.new("Please specify SMS sender.") if Tolliver.sms_sender.nil?
 
             # Request API
-            response = @api.send_message({
-                                             'src' => Tolliver.sms_sender, # TODO: This should be improved to take sender from number pool and remember number / message mapping
-                                             'dst' => notification_receiver.receiver_contact.to_s,
-                                             'text' => ActionController::Base.helpers.strip_tags(notification.message.to_s),
-                                             'method' => 'POST'
-                                         })
+            @client.message.create(Tolliver.sms_sender, # TODO: This should be improved to take sender from number pool and remember number / message mapping
+                                   [notification_receiver.receiver_phone.to_s],
+                                   ActionController::Base.helpers.strip_tags(notification.short_message.to_s))
 
             true
           end

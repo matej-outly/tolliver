@@ -26,7 +26,7 @@ module Tolliver
         # Validators
         # *********************************************************************
 
-        validates_presence_of :notification_delivery_id, :receiver_ref, :receiver_contact
+        validates_presence_of :notification_delivery_id, :receiver_ref
 
         # *********************************************************************
         # State

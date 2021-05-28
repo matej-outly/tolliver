@@ -14,6 +14,20 @@ module Tolliver
     module Methods
       class Sms
 
+        def is_notification_valid?(notification)
+          return false if notification.short_message.blank?
+          true
+        end
+
+        def is_notification_delivery_valid?(_)
+          true
+        end
+
+        def is_notification_receiver_valid?(notification_receiver)
+          return false if notification_receiver.receiver_phone.blank?
+          true
+        end
+
         def deliver(notification_receiver)
           return false if provider.nil?
 

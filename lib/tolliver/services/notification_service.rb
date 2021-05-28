@@ -29,17 +29,22 @@ module Tolliver
           raise Tolliver::Errors::BadRequest.new('Missing template.') if template.blank?
           notification_template = Tolliver.notification_template_model.where(ref: template).first
           notification_template = Tolliver.notification_template_model.where(id: template).first if notification_template.nil?
+          if notification_template.nil? && template == 'common'
+            notification_template = Tolliver.notification_template_model.new(subject: '%{subject}', message: '%{message}',
+                                                                             is_disabled: false, is_dry: false)
+          end
           raise Tolliver::Errors::NotFound.new("Template #{template.to_s} not found.") if notification_template.nil?
 
-          if !notification_template.is_disabled && !notification_template.message.blank?
+          if !notification_template.is_disabled
 
             # Interpret params and store it in DB
             params = map_params(options[:params] || {})
-            notification.message = eval_expressions(interpret_named_params(notification_template.message, params))
             notification.subject = eval_expressions(interpret_named_params(notification_template.subject, params))
+            notification.message = eval_expressions(interpret_named_params(notification_template.message, params))
+            notification.short_message = eval_expressions(interpret_named_params(notification_template.short_message, params))
 
             # Notification template
-            notification.notification_template = notification_template
+            notification.notification_template = notification_template unless notification_template.new_record?
 
             # Signature
             unless options[:signature].blank?
@@ -77,7 +82,10 @@ module Tolliver
               methods.each do |method|
 
                 # Delivery object
-                notification_delivery = notification.notification_deliveries.create(method: method)
+                notification_delivery = notification.notification_deliveries.build(method: method)
+
+                # Validate notification suitability for the selected method
+                next unless notification_delivery.method_service.is_notification_valid?(notification)
 
                 # Is postponed
                 if options[:is_postponed]
@@ -86,26 +94,40 @@ module Tolliver
 
                 # Sender
                 unless options[:sender].blank?
-                  raise Tolliver::Errors::BadRequest.new('Missing sender ref.') if options[:sender][:ref].blank?
-                  raise Tolliver::Errors::BadRequest.new('Missing sender contact.') if options[:sender][:contact].blank?
                   notification_delivery.sender_ref = options[:sender][:ref]
-                  notification_delivery.sender_contact = options[:sender][:contact]
+                  notification_delivery.sender_email = options[:sender][:email]
+                  notification_delivery.sender_email = options[:sender][:contact] if notification_delivery.sender_email.blank? # deprecated
+                  notification_delivery.sender_phone = options[:sender][:phone]
+                  raise Tolliver::Errors::BadRequest.new('Missing sender ref.') if notification_delivery.sender_ref.blank?
+                  unless notification_delivery.method_service.is_notification_delivery_valid?(notification_delivery) # throw exception if sender not valid
+                    raise Tolliver::Errors::BadRequest.new('Sender contact not valid.')
+                  end
                 end
+
+                # Must be persisted in DB before receiver created
+                notification_delivery.save
 
                 # Receivers
                 receivers = options[:receivers] || []
                 raise Tolliver::Errors::BadRequest.new('Missing receivers.') if receivers.blank? || receivers.empty?
                 receivers = [receivers] unless receivers.is_a?(Array)
-                filtered_receivers = receivers.dup # TODO contact validation based on method and filter
 
-                # Save to DB
-                filtered_receivers.each do |receiver|
-                  raise Tolliver::Errors::BadRequest.new('Missing receiver ref.') if receiver[:ref].blank?
-                  raise Tolliver::Errors::BadRequest.new('Missing receiver contact.') if receiver[:contact].blank?
-                  notification_delivery.notification_receivers.create(receiver_ref: receiver[:ref], receiver_contact: receiver[:contact])
+                # Save to DB if valid for the selected method
+                receivers_count = 0
+                receivers.each do |receiver|
+                  notification_receiver = notification_delivery.notification_receivers.build
+                  notification_receiver.receiver_ref = receiver[:ref]
+                  notification_receiver.receiver_email = receiver[:email]
+                  notification_receiver.receiver_email = receiver[:contact] if notification_receiver.receiver_email.blank? # deprecated
+                  notification_receiver.receiver_phone = receiver[:phone]
+                  raise Tolliver::Errors::BadRequest.new('Missing receiver ref.') if notification_receiver.receiver_ref.blank?
+                  if notification_delivery.method_service.is_notification_receiver_valid?(notification_receiver) # ignore receiver if not valid
+                    notification_receiver.save
+                    receivers_count += 1
+                  end
                 end
                 notification_delivery.sent_count = 0
-                notification_delivery.receivers_count = filtered_receivers.size
+                notification_delivery.receivers_count = receivers_count
                 notification_delivery.save
 
               end
@@ -113,7 +135,7 @@ module Tolliver
             end
 
           else
-            notification = nil # Do not create notification with empty message
+            notification = nil # Do not create disabled notification
           end
 
         end

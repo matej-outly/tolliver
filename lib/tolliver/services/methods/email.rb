@@ -14,6 +14,23 @@ module Tolliver
     module Methods
       class Email
 
+        def is_notification_valid?(notification)
+          return false if notification.subject.blank?
+          return false if notification.message.blank?
+          true
+        end
+
+        def is_notification_delivery_valid?(notification_delivery)
+          return false if !notification_delivery.sender_email.blank? && !(notification_delivery.sender_email =~ URI::MailTo::EMAIL_REGEXP)
+          true
+        end
+
+        def is_notification_receiver_valid?(notification_receiver)
+          return false if notification_receiver.receiver_email.blank?
+          return false unless notification_receiver.receiver_email =~ URI::MailTo::EMAIL_REGEXP
+          true
+        end
+
         def deliver(notification_receiver)
           return false if provider.nil?
 

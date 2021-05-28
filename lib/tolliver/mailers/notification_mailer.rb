@@ -33,7 +33,7 @@ module Tolliver
         end
 
         # Mail
-        mail(from: @sender_email, to: @notification_receiver.receiver_contact.to_s, subject: @notification.subject)
+        mail(from: @sender_email, to: @notification_receiver.receiver_email.to_s, subject: @notification.subject)
       end
 
     end

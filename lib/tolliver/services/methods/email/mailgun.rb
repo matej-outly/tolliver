@@ -29,17 +29,19 @@ module Tolliver
             # Sender
             raise Tolliver::Errors::StandardError.new("Please specify e-mail sender.") if Tolliver.email_sender.nil?
 
-            # Message builder
+            # Build message
             message = ::Mailgun::MessageBuilder.new
             message.from(Tolliver.email_sender, {'full_name' => Tolliver.email_sender_name})
-            message.add_recipient(:to, notification_receiver.receiver_contact.to_s)
-            message.reply_to(notification_receiver.notification_delivery.sender_contact.to_s) unless notification_receiver.notification_delivery.sender_contact.blank?
+            message.add_recipient(:to, notification_receiver.receiver_email.to_s)
+            message.reply_to(notification_receiver.notification_delivery.sender_email.to_s) unless notification_receiver.notification_delivery.sender_email.blank?
             message.subject(notification.subject)
             message.body_text(ActionController::Base.helpers.strip_tags(notification.message.to_s))
             message.body_html(notification.message)
             notification.notification_attachments.each do |notification_attachment|
               message.add_attachment(StringIO.new(notification_attachment.read), notification_attachment.name) if notification_attachment.read
             end
+
+            # Request API
             response = @client.send_message(@domain, message)
             if response.code != 200
               raise Tolliver::Errors::StandardError.new(response.body)
