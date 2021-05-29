@@ -7,7 +7,7 @@ send it in a batch with different delivery methods:
 - SMS with Plivo provider
 - Whatever custom delivery method
 
-## Installation
+## 1. Installation
 
 Add gem to your Gemfile:
 
@@ -20,7 +20,7 @@ Add database migrations to you application (you can modify DB structure accordin
     $ rake tolliver:install:migrations
     $ rake db:migrate
 
-### Plivo support
+### 1.1. Plivo support
 
 Add gem to your Gemfile:
 
@@ -28,7 +28,7 @@ Add gem to your Gemfile:
 gem 'plivo'
 ```
 
-### Mailgun support
+### 1.2. Mailgun support
 
 Add gem to your Gemfile:
 
@@ -36,7 +36,7 @@ Add gem to your Gemfile:
 gem 'mailgun-ruby'
 ```
 
-## Configuration
+## 2. Configuration
 
 You can configure module through `config/initializers/tolliver.rb` file:
 
@@ -65,7 +65,7 @@ Available options:
 - sms_provider_params
 - delivery_methods
 
-### Plivo support
+### 2.1. Plivo support
 
 Set Plivo as SMS provider and add Plivo auth ID and token into Tolliver configuration file:
 
@@ -80,7 +80,7 @@ Tolliver.setup do |config|
 end
 ```
 
-### Mailgun support
+### 2.2. Mailgun support
 
 Set Mailgun as e-mail provider and add Mailgun API key and domain into Tolliver configuration file:
 
@@ -95,7 +95,7 @@ Tolliver.setup do |config|
 end
 ```
  
-## Usage
+## 3. Usage
 
 To enter new notification into the system, just call `notify` method:
 
@@ -107,8 +107,8 @@ Tolliver.notify(
     {key: :key_2, value: :value_2}
   ], 
   receivers: [
-    {ref: :receiver_1, contact: "receiver_1@domain.tld"},
-    {ref: :receiver_2, contact: "receiver_2@domain.tld"}, 
+    {ref: :receiver_1, email: "receiver_1@domain.tld"},
+    {ref: :receiver_2, email: "receiver_2@domain.tld"}, 
   ]
 )
 ```
