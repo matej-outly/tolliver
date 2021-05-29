@@ -29,8 +29,9 @@ module Tolliver
           raise Tolliver::Errors::BadRequest.new('Missing template.') if template.blank?
           notification_template = Tolliver.notification_template_model.where(ref: template).first
           notification_template = Tolliver.notification_template_model.where(id: template).first if notification_template.nil?
-          if notification_template.nil? && template == 'common'
-            notification_template = Tolliver.notification_template_model.new(subject: '%{subject}', message: '%{message}',
+          if notification_template.nil? && template.to_s == 'common'
+            notification_template = Tolliver.notification_template_model.new(subject: '%{subject}',
+                                                                             message: '%{message}', short_message: '%{message}',
                                                                              is_disabled: false, is_dry: false)
           end
           raise Tolliver::Errors::NotFound.new("Template #{template.to_s} not found.") if notification_template.nil?
@@ -39,9 +40,9 @@ module Tolliver
 
             # Interpret params and store it in DB
             params = map_params(options[:params] || {})
-            notification.subject = eval_expressions(interpret_named_params(notification_template.subject, params))
-            notification.message = eval_expressions(interpret_named_params(notification_template.message, params))
-            notification.short_message = eval_expressions(interpret_named_params(notification_template.short_message, params))
+            notification.subject = eval_expressions(interpret_named_params(notification_template.subject.to_s, params))
+            notification.message = eval_expressions(interpret_named_params(notification_template.message.to_s, params))
+            notification.short_message = eval_expressions(interpret_named_params(notification_template.short_message.to_s, params))
 
             # Notification template
             notification.notification_template = notification_template unless notification_template.new_record?
@@ -96,7 +97,6 @@ module Tolliver
                 unless options[:sender].blank?
                   notification_delivery.sender_ref = options[:sender][:ref]
                   notification_delivery.sender_email = options[:sender][:email]
-                  notification_delivery.sender_email = options[:sender][:contact] if notification_delivery.sender_email.blank? # deprecated
                   notification_delivery.sender_phone = options[:sender][:phone]
                   raise Tolliver::Errors::BadRequest.new('Missing sender ref.') if notification_delivery.sender_ref.blank?
                   unless notification_delivery.method_service.is_notification_delivery_valid?(notification_delivery) # throw exception if sender not valid
@@ -118,7 +118,6 @@ module Tolliver
                   notification_receiver = notification_delivery.notification_receivers.build
                   notification_receiver.receiver_ref = receiver[:ref]
                   notification_receiver.receiver_email = receiver[:email]
-                  notification_receiver.receiver_email = receiver[:contact] if notification_receiver.receiver_email.blank? # deprecated
                   notification_receiver.receiver_phone = receiver[:phone]
                   raise Tolliver::Errors::BadRequest.new('Missing receiver ref.') if notification_receiver.receiver_ref.blank?
                   if notification_delivery.method_service.is_notification_receiver_valid?(notification_receiver) # ignore receiver if not valid
