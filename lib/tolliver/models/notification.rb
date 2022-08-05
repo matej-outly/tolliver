@@ -23,13 +23,7 @@ module Tolliver
         has_many :notification_deliveries, class_name: Tolliver.notification_delivery_model.to_s, dependent: :destroy
         has_many :notification_receivers, class_name: Tolliver.notification_receiver_model.to_s, through: :notification_deliveries
         has_many :notification_attachments, class_name: Tolliver.notification_attachment_model.to_s, dependent: :destroy
-        belongs_to :notification_template, class_name: Tolliver.notification_template_model.to_s
-
-        # *********************************************************************
-        # Validators
-        # *********************************************************************
-
-        validates_presence_of :subject
+        belongs_to :notification_template, class_name: Tolliver.notification_template_model.to_s, optional: true
 
       end
 

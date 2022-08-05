@@ -5,6 +5,7 @@ send it in a batch with different delivery methods:
 
 - E-mail with SMTP aor Mailgun provider
 - SMS with Plivo provider
+- Slack
 - Whatever custom delivery method
 
 ## 1. Installation
@@ -27,7 +28,6 @@ Add gem to your Gemfile:
 ```ruby
 gem 'plivo'
 ```
-
 ### 1.2. Mailgun support
 
 Add gem to your Gemfile:
@@ -35,6 +35,13 @@ Add gem to your Gemfile:
 ```ruby
 gem 'mailgun-ruby'
 ```
+### 1.3. Slack support
+
+Add gem to your Gemfile:
+
+```ruby
+gem 'slack-ruby-client'
+````
 
 ## 2. Configuration
 
@@ -63,6 +70,7 @@ Available options:
 - sms_sender
 - sms_provider
 - sms_provider_params
+- slack_params
 - delivery_methods
 
 ### 2.1. Plivo support

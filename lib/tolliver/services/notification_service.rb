@@ -53,7 +53,7 @@ module Tolliver
             end
 
             # Save to DB
-            notification.save
+            notification.save!
 
             # Attachments
             unless options[:attachments].blank?
@@ -105,7 +105,7 @@ module Tolliver
                 end
 
                 # Must be persisted in DB before receiver created
-                notification_delivery.save
+                notification_delivery.save!
 
                 # Receivers
                 receivers = options[:receivers] || []
@@ -121,13 +121,13 @@ module Tolliver
                   notification_receiver.receiver_phone = receiver[:phone]
                   raise Tolliver::Errors::BadRequest.new('Missing receiver ref.') if notification_receiver.receiver_ref.blank?
                   if notification_delivery.method_service.is_notification_receiver_valid?(notification_receiver) # ignore receiver if not valid
-                    notification_receiver.save
+                    notification_receiver.save!
                     receivers_count += 1
                   end
                 end
                 notification_delivery.sent_count = 0
                 notification_delivery.receivers_count = receivers_count
-                notification_delivery.save
+                notification_delivery.save!
 
               end
 

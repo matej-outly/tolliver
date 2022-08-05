@@ -29,6 +29,7 @@ require "tolliver/services/methods/email/smtp"
 require "tolliver/services/methods/email/mailgun"
 require "tolliver/services/methods/sms"
 require "tolliver/services/methods/sms/plivo"
+require "tolliver/services/methods/slack"
 
 # Jobs
 require "tolliver/jobs/delivery_job"
@@ -134,6 +135,7 @@ module Tolliver
   # Available methods:
   # - email
   # - sms
+  # - slack
   # - whatever
   mattr_accessor :delivery_methods
   @@delivery_methods = [
@@ -170,10 +172,14 @@ module Tolliver
 
   # Used SMS provider
   mattr_accessor :sms_provider
-  @@sms_provider = nil
+  @@sms_provider = :plivo
 
   # SMS provider params
   mattr_accessor :sms_provider_params
   @@sms_provider_params = {}
+
+  # Slack provider params
+  mattr_accessor :slack_params
+  @@slack_params = {}
 
 end
